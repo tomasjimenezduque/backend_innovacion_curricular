@@ -26,7 +26,19 @@ from controllers.asociaciones_controller import router as asociaciones_router
 from controllers.area_conocimiento_controller import router as area_router
 from controllers.activ_academica_controller import router as activ_academica_router
 from controllers.docente_departamento_controller import router as docente_router
+import sys
+import traceback
 
+try:
+    from database.connection import engine, Base
+    import models
+    from controllers.aa_rc_controller import router as aa_rc_router
+    # ... resto de imports
+except Exception as e:
+    print("❌ ERROR EN IMPORTS:", file=sys.stderr)
+    traceback.print_exc()
+    sys.exit(1)
+    
 # 2. Instancia de FastAPI
 app = FastAPI(
     title="API Innovación Curricular",
