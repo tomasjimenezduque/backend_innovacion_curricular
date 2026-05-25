@@ -5,19 +5,24 @@ from models.base import Base
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DB_POSTGRES")
+DATABASE_URL = os.getenv("DB_POSTGRES") or os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:
-    raise ValueError("❌ DATABASE_URL no está configurada en las variables de entorno")
+    raise ValueError("❌ DATABASE_URL no está configurada")
 
-# Neon usa postgresql:// pero SQLAlchemy async necesita postgresql+asyncpg://
+# Convertir postgresql:// a postgresql+asyncpg://
 if DATABASE_URL.startswith("postgresql://"):
     DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
 
+# asyncpg no acepta sslmode en la URL — se pasa como connect_args
+if "sslmode=require" in DATABASE_URL:
+    DATABASE_URL = DATABASE_URL.replace("?sslmode=require", "").replace("&sslmode=require", "")
+
 engine = create_async_engine(
     DATABASE_URL,
-    echo=False,  # ← False en producción para no llenar logs
-    future=True
+    echo=False,
+    future=True,
+    connect_args={"ssl": True}  # ← así se pasa SSL con asyncpg
 )
 
 SessionLocal = async_sessionmaker(
